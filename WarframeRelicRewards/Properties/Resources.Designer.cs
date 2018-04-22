@@ -79,5 +79,35 @@ namespace WarframeRelicRewards.Properties {
                 return ((System.Drawing.Bitmap)(obj));
             }
         }
+        
+        /// <summary>
+        ///   Busca un recurso adaptado de tipo System.Byte[].
+        /// </summary>
+        internal static byte[] weng {
+            get {
+                object obj = ResourceManager.GetObject("weng", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Busca un recurso adaptado de tipo System.Byte[].
+        /// </summary>
+        internal static byte[] weng1 {
+            get {
+                object obj = ResourceManager.GetObject("weng1", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Busca un recurso adaptado de tipo System.Byte[].
+        /// </summary>
+        internal static byte[] weng2 {
+            get {
+                object obj = ResourceManager.GetObject("weng2", resourceCulture);
+                return ((byte[])(obj));
+            }
+        }
     }
 }

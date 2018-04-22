@@ -54,6 +54,7 @@ namespace WarframeRelicRewards {
             };
             hook.KeyPressed += HandleHotkey;
             hook.RegisterHotKey(0, Keys.F4);
+            System.IO.Directory.CreateDirectory("img");
         }
 
         private int GetWarframeMarketPrice(string itemName) {
