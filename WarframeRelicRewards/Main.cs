@@ -1,23 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Emgu.CV;
-using Emgu.Util;
 using Emgu.CV.Structure;
 using Emgu.CV.OCR;
 using System.Net.Http;
 using Newtonsoft.Json;
-using System.Runtime.InteropServices;
 using System.Drawing.Imaging;
 using Emgu.CV.CvEnum;
 using System.IO;
-using System.Threading;
 
 namespace WarframeRelicRewards {
     public partial class Main : Form {
@@ -28,6 +20,8 @@ namespace WarframeRelicRewards {
         private readonly KeyboardHook hook = new KeyboardHook();
 
         private static Rectangle NormalizedRectangle(int x, int y, int w, int h) {
+            // Normalize regions so that the program works in other resolutions
+            // than 1920x1080
             return new Rectangle(
                 (Screen.PrimaryScreen.Bounds.Width * x) / 1920,
                 (Screen.PrimaryScreen.Bounds.Height * y) / 1080,
@@ -54,6 +48,7 @@ namespace WarframeRelicRewards {
             };
             hook.KeyPressed += HandleHotkey;
             hook.RegisterHotKey(0, Keys.F4);
+            // Create img directory if not exists
             System.IO.Directory.CreateDirectory("img");
         }
 
@@ -101,7 +96,6 @@ namespace WarframeRelicRewards {
                 // Extract the subimage containing the item name
                 // this has to be done sequentially and not in parallel
                 // TODO: multiline names
-                // TODO: other resolutions than Full HD (1920x1080)
                 subimages[i] = image.Copy(rectangles[i]);
             }
             // We run both the OCR and the warframe.market query in parallel
@@ -141,6 +135,7 @@ namespace WarframeRelicRewards {
                     labels[i, 1].Text = labels[i, 2].Text = "???";
                 }
             }
+            // Minimize and restore window to bring it to the front
             WindowState = FormWindowState.Minimized;
             WindowState = FormWindowState.Normal;
             if (errors && Properties.Settings.Default.submit_errors) SubmitErrorAsync();
@@ -148,6 +143,8 @@ namespace WarframeRelicRewards {
         }
 
         private async Task SubmitErrorAsync() {
+            // Submit original screenshot, thresholded segments containing the text,
+            // text recognized by the OCR and fixed text
             var form = new MultipartFormDataContent();
             for (int i = 0; i < 4; i++) {
                 form.Add(new StringContent(reportStrings[i, 0]), "item_detected_name_" + i);
@@ -158,9 +155,8 @@ namespace WarframeRelicRewards {
             var screenshot = File.ReadAllBytes($@"img\screenshot.jpg");
             form.Add(new ByteArrayContent(screenshot), "screenshot", "screenshot");
             HttpResponseMessage response = await client.PostAsync("https://hawkings.tk/wfrelics/upload.php", form);
-            //if (!response.IsSuccessStatusCode) {
-            //    MessageBox.Show(response.Content.ReadAsStringAsync().Result);
-            //}
+            // Prevent reporting the same error twice
+            submitErrorButton.Enabled = false;
         }
 
         private void submitErrorsCheckBox_CheckedChanged(object sender, EventArgs e) {
