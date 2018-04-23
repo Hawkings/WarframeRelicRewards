@@ -59,6 +59,7 @@ namespace WarframeRelicRewards {
         }
 
         private int GetWarframeMarketPrice(string itemName) {
+            if (itemName == "FORMA BLUEPRINT") return 0;
             var item = Items.Normalize(itemName);
             try {
                 // normalize item name: NOVA PRIME BLUEPRINT -> nova_prime_blueprint
