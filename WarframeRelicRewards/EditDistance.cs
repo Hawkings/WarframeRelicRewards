@@ -14,7 +14,7 @@ public static class EditDistance {
                 bestdist = dist;
             }
         }
-        if (bestdist > 25) return "NOT RECOGNIZED";
+        if (bestdist > 25 || Items.Names[besti] == "BLUEPRINT") return "NOT RECOGNIZED";
         return Items.Names[besti];
     }
     public static int[] toIntArray(string str) {

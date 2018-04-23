@@ -239,7 +239,11 @@ public static class Items {
         {"ZEPHYR PRIME NEUROPTICS BLUEPRINT",15},
         {"ZEPHYR PRIME CHASSIS BLUEPRINT",45},
         {"ZEPHYR PRIME SYSTEMS BLUEPRINT",100},
-        {"FORMA BLUEPRINT", 0}
+        {"FORMA BLUEPRINT", 0},
+        // when the name is too long and does not fit into a single line
+        // sometimes the recognized text is "BLUEPRINT" and the program
+        // confuses it with FORMA BLUEPRINT. This is added to avoid that.
+        {"BLUEPRINT", -1}
 };
 
     public static readonly string[] Names = Ducats.Select(item => item.Key).ToArray();
@@ -256,6 +260,9 @@ public static class Items {
     private static readonly Regex warframeRegex = new Regex("((?:ASH|ATLAS|BANSHEE|CHROMA|EMBER|EQUINOX|EXCALIBUR|FROST|GARA|HARROW|HYDROID|INAROS|IVARA|LIMBO|LOKI|MAG|MESA|MIRAGE|NEKROS|NEZHA|NIDUS|NOVA|NYX|OBERON|OCTAVIA|RHINO|SARYN|TITANIA|TRINITY|VALKYR|VAUBAN|VOLT|WUKONG|ZEPHYR|ODONATA) PRIME (?:CHASSIS|SYSTEMS|NEUROPTICS|WINGS|HARNESS)) BLUEPRINT");
 
     public static string Normalize(string name) {
+        // Remove "blueprint" at the end of warframe prime parts and
+        // odonata prime parts
+        // This is needed to check the
         var m = warframeRegex.Match(name);
         if (m.Success) {
             return m.Groups[1].ToString();

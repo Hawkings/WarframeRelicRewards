@@ -35,10 +35,16 @@ namespace WarframeRelicRewards {
 
             submitErrorsCheckBox.Checked = Properties.Settings.Default.submit_errors;
             rectangles = new Rectangle[] {
+                // 1 line
                 NormalizedRectangle(108, 458, 516 - 108, 487 - 458),
                 NormalizedRectangle(540, 458, 948 - 540, 487 - 458),
                 NormalizedRectangle(972, 458, 1380 - 972, 487 - 458),
-                NormalizedRectangle(1404, 458, 1813 - 1404, 487 - 458)
+                NormalizedRectangle(1404, 458, 1813 - 1404, 487 - 458),
+                // 2 lines
+                NormalizedRectangle(108, 433, 516 - 108, 487 - 433),
+                NormalizedRectangle(540, 433, 948 - 540, 487 - 433),
+                NormalizedRectangle(972, 433, 1380 - 972, 487 - 433),
+                NormalizedRectangle(1404, 433, 1813 - 1404, 487 - 433)
             };
             labels = new Label[,] {
                 {name1label, ducats1label, plat1label},
@@ -91,43 +97,50 @@ namespace WarframeRelicRewards {
                 ).Convert<Bgr, byte>();
             bool errors = false;
             var platvalues = new int[4] { -1, -1, -1, -1 };
-            var subimages = new Image<Bgr, byte>[4];
-            for (int i = 0; i < 4; i++) {
+            var subimages = new Image<Bgr, byte>[8];
+            for (int i = 0; i < 8; i++) {
                 // Extract the subimage containing the item name
                 // this has to be done sequentially and not in parallel
                 // TODO: multiline names
                 subimages[i] = image.Copy(rectangles[i]);
             }
+            // returns a funtion that tries to recognize item i
+            // if big is true, considers a 2-line item name
+            Action<int> recognize(bool big) {
+                return ((i) => {
+                    var subimage = subimages[big ? 4+i : i];
+                    // Save the image as jpg for possible upload later
+                    subimage.ToBitmap().Save($@"img\{i}.jpg", ImageFormat.Jpeg);
+                    // Only one OCR instance per thread or runtime errors happen
+                    var ocr = new Tesseract(
+                        @".\tessdata",
+                        "weng",
+                        OcrEngineMode.TesseractOnly,
+                        // Fun fact: no Q or J appears on any name
+                        "ABCDEFGHIJKLMNOPRSTUVWXYZ&"
+                    );
+                    ocr.SetImage(subimage);
+                    ocr.Recognize();
+                    var str = ocr.GetUTF8Text().Trim();
+                    // Save the originally recognized text
+                    reportStrings[i, 0] = str;
+                    var item = EditDistance.BestMatch(str);
+                    // Save the fixed name
+                    reportStrings[i, 1] = item;
+                    if (item == "NOT RECOGNIZED") {
+                        if (big) errors = true;
+                        else recognize(true)(i);
+                    } else {
+                        platvalues[i] = GetWarframeMarketPrice(item);
+                    }
+                });
+            }
             // We run both the OCR and the warframe.market query in parallel
-            Parallel.For(0, 4, async (i) => {
-                var subimage = subimages[i];
-                // Save the image as jpg for possible upload later
-                subimage.ToBitmap().Save($@"img\{i}.jpg", ImageFormat.Jpeg);
-                // Only one OCR instance per thread or runtime errors happen
-                var ocr = new Tesseract(
-                    @".\tessdata",
-                    "weng",
-                    OcrEngineMode.TesseractOnly,
-                    // Fun fact: no Q or J appears on any name
-                    "ABCDEFGHIJKLMNOPRSTUVWXYZ&"
-                );
-                ocr.SetImage(subimage);
-                ocr.Recognize();
-                var str = ocr.GetUTF8Text().Trim();
-                // Save the originally recognized text
-                reportStrings[i, 0] = str;
-                var item = EditDistance.BestMatch(str);
-                // Save the fixed name
-                reportStrings[i, 1] = item;
-                if (item == "NOT RECOGNIZED") {
-                    errors = true;
-                } else {
-                    platvalues[i] = GetWarframeMarketPrice(item);
-                }
-            });
+            Parallel.For(0, 4, recognize(false));
             // Labels can only be edited in the main thread
             for (int i = 0; i < 4; i++) {
-                var name = labels[i, 0].Text = reportStrings[i, 1];
+                var name = reportStrings[i, 1];
+                labels[i, 0].Text = Items.Normalize(name);
                 if (platvalues[i] >= 0) {
                     labels[i, 1].Text = Items.Ducats[name] + "";
                     labels[i, 2].Text = platvalues[i] + "";
