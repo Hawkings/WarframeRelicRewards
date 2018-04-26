@@ -63,7 +63,7 @@ namespace WarframeRelicRewards {
             var item = Items.Normalize(itemName);
             try {
                 // normalize item name: NOVA PRIME BLUEPRINT -> nova_prime_blueprint
-                var normItem = item.ToLower().Replace(' ', '_');
+                var normItem = item.ToLower().Replace(' ', '_').Replace("&", "and");
                 var responseString = client.GetStringAsync("https://api.warframe.market/v1/items/" + normItem + "/orders").Result;
                 dynamic res = JsonConvert.DeserializeObject(responseString);
                 var lowestPrice = int.MaxValue;
